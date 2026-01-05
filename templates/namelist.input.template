@@ -1,0 +1,157 @@
+&time_control
+ run_days                            = {{RUN_DAYS}},
+ run_hours                           = {{RUN_HOURS}},
+ run_minutes                         = 0,
+ run_seconds                         = 0,
+ start_year                          = {{START_YEAR}},  {{START_YEAR}},  {{START_YEAR}},
+ start_month                         = {{START_MONTH}}, {{START_MONTH}}, {{START_MONTH}},
+ start_day                           = {{START_DAY}},   {{START_DAY}},   {{START_DAY}},
+ start_hour                          = {{START_HOUR}},  {{START_HOUR}},  {{START_HOUR}},
+ end_year                            = {{END_YEAR}},    {{END_YEAR}},    {{END_YEAR}},
+ end_month                           = {{END_MONTH}},   {{END_MONTH}},   {{END_MONTH}},
+ end_day                             = {{END_DAY}},     {{END_DAY}},     {{END_DAY}},
+ end_hour                            = {{END_HOUR}},    {{END_HOUR}},    {{END_HOUR}},
+ interval_seconds                    = {{INTERVAL_SECONDS}},
+ input_from_file                     = .true., .true., .true.,
+ history_interval                    = {{HISTORY_INTERVAL}}, {{HISTORY_INTERVAL}}, {{HISTORY_INTERVAL}},
+ frames_per_outfile                  = {{FRAMES_PER_OUTFILE}}, {{FRAMES_PER_OUTFILE}}, {{FRAMES_PER_OUTFILE}},
+ restart                             = .false.,
+ restart_interval                    = {{RESTART_INTERVAL}},
+ io_form_history                     = 2,
+ io_form_restart                     = 2,
+ io_form_input                       = 2,
+ io_form_boundary                    = 2,
+ auxinput4_inname                    = 'wrflowinp_d<domain>',
+ auxinput4_interval                  = 360, 360, 360,
+ io_form_auxinput4                   = 2,
+ debug_level                         = 0,
+/
+
+&domains
+ time_step                           = {{TIME_STEP}},
+ time_step_fract_num                 = 0,
+ time_step_fract_den                 = 1,
+ max_dom                             = {{MAX_DOM}},
+ e_we                                = {{D01_E_WE}},   {{D02_E_WE}},   {{D03_E_WE}},
+ e_sn                                = {{D01_E_SN}},   {{D02_E_SN}},   {{D03_E_SN}},
+ e_vert                              = {{E_VERT}},     {{E_VERT}},     {{E_VERT}},
+ dzstretch_s                         = 1.1,
+ p_top_requested                     = {{P_TOP}},
+ num_metgrid_levels                  = {{NUM_METGRID_LEVELS}},
+ num_metgrid_soil_levels             = {{NUM_METGRID_SOIL_LEVELS}},
+ dx                                  = {{D01_DX}},  {{D02_DX}},  {{D03_DX}},
+ dy                                  = {{D01_DY}},  {{D02_DY}},  {{D03_DY}},
+ grid_id                             = 1,     2,     3,
+ parent_id                           = 0,     1,     2,
+ i_parent_start                      = 1,     {{D02_I_PARENT_START}},  {{D03_I_PARENT_START}},
+ j_parent_start                      = 1,     {{D02_J_PARENT_START}},  {{D03_J_PARENT_START}},
+ parent_grid_ratio                   = 1,     {{D02_PARENT_GRID_RATIO}},  {{D03_PARENT_GRID_RATIO}},
+ parent_time_step_ratio              = 1,     {{D02_PARENT_GRID_RATIO}},  {{D03_PARENT_GRID_RATIO}},
+ feedback                            = 1,
+ smooth_option                       = 0,
+ nproc_x                             = {{NUM_TILES_X}},
+ nproc_y                             = {{NUM_TILES_Y}},
+ numtiles                            = {{NUMTILES}},
+/
+
+&physics
+!=========================================================================
+! Physics options optimized for Fire Weather Index (FWI) calculations
+! Key output variables: T2, Q2 (->RH), U10, V10, RAINNC, RAINC
+!=========================================================================
+ 
+ ! Microphysics: Thompson (8) - good precipitation forecasts
+ mp_physics                          = {{MP_PHYSICS}},    {{MP_PHYSICS}},    {{MP_PHYSICS}},
+ 
+ ! Cumulus: Kain-Fritsch for coarse domains, explicit for d03
+ cu_physics                          = {{CU_PHYSICS_D01}}, {{CU_PHYSICS_D02}}, {{CU_PHYSICS_D03}},
+ 
+ ! Radiation: RRTMG (4) - accurate for surface energy balance
+ ra_lw_physics                       = {{RA_LW_PHYSICS}}, {{RA_LW_PHYSICS}}, {{RA_LW_PHYSICS}},
+ ra_sw_physics                       = {{RA_SW_PHYSICS}}, {{RA_SW_PHYSICS}}, {{RA_SW_PHYSICS}},
+ radt                                = {{RADT}},          {{RADT}},          {{RADT}},
+ 
+ ! PBL: YSU (1) - reliable for temperature and wind profiles
+ bl_pbl_physics                      = {{BL_PBL_PHYSICS}}, {{BL_PBL_PHYSICS}}, {{BL_PBL_PHYSICS}},
+ bldt                                = 0,     0,     0,
+ 
+ ! Surface Layer: MM5 Monin-Obukhov (1)
+ sf_sfclay_physics                   = {{SF_SFCLAY_PHYSICS}}, {{SF_SFCLAY_PHYSICS}}, {{SF_SFCLAY_PHYSICS}},
+ 
+ ! Land Surface: Noah-MP (4) - best for fire weather variables
+ ! Provides accurate soil moisture, surface temperature, humidity
+ sf_surface_physics                  = {{SF_SURFACE_PHYSICS}}, {{SF_SURFACE_PHYSICS}}, {{SF_SURFACE_PHYSICS}},
+ num_land_cat                        = {{NUM_LAND_CAT}},
+ num_soil_layers                     = {{NUM_SOIL_LAYERS}},
+ 
+ ! Additional options
+ icloud                              = 1,
+ sf_urban_physics                    = 0,     0,     0,
+ 
+ ! SST update (if running > 24h with varying SST)
+ sst_update                          = 0,
+/
+
+&fdda
+! No FDDA nudging by default
+/
+
+&dynamics
+ hybrid_opt                          = 2,
+ w_damping                           = 0,
+ diff_opt                            = 2,      2,      2,
+ km_opt                              = 4,      4,      4,
+ diff_6th_opt                        = 0,      0,      0,
+ diff_6th_factor                     = 0.12,   0.12,   0.12,
+ base_temp                           = 290.,
+ damp_opt                            = 3,
+ zdamp                               = 5000.,  5000.,  5000.,
+ dampcoef                            = 0.2,    0.2,    0.2,
+ khdif                               = 0,      0,      0,
+ kvdif                               = 0,      0,      0,
+ non_hydrostatic                     = .true., .true., .true.,
+ moist_adv_opt                       = 1,      1,      1,
+ scalar_adv_opt                      = 1,      1,      1,
+ gwd_opt                             = 1,      0,      0,
+ epssm                               = 0.1,    0.1,    0.1,
+/
+
+&bdy_control
+ spec_bdy_width                      = 5,
+ specified                           = .true.,
+/
+
+&grib2
+/
+
+&namelist_quilt
+ nio_tasks_per_group                 = {{NUM_IO_TASKS}},
+ nio_groups                          = {{NUM_IO_GROUPS}},
+/
+
+!=========================================================================
+! NOTES FOR FWI POST-PROCESSING
+!=========================================================================
+! The Canadian Fire Weather Index (FWI) System requires:
+!
+! From WRF Output (wrfout_d0X_*):
+!   - T2      : 2-meter temperature (K) -> convert to °C
+!   - Q2      : 2-meter specific humidity (kg/kg) -> convert to RH%
+!   - PSFC    : Surface pressure (Pa) - needed for RH calculation
+!   - U10     : 10-meter U wind component (m/s)
+!   - V10     : 10-meter V wind component (m/s) -> combine for wind speed
+!   - RAINNC  : Non-convective precipitation (mm)
+!   - RAINC   : Convective precipitation (mm) -> sum for total precip
+!
+! FWI Components calculated from above:
+!   - FFMC : Fine Fuel Moisture Code (T, RH, Wind, Rain)
+!   - DMC  : Duff Moisture Code (T, RH, Rain)
+!   - DC   : Drought Code (T, Rain)
+!   - ISI  : Initial Spread Index (FFMC, Wind)
+!   - BUI  : Buildup Index (DMC, DC)
+!   - FWI  : Fire Weather Index (ISI, BUI)
+!
+! Temporal Requirements:
+!   - Noon local time values (12:00 LST) for standard FWI
+!   - history_interval = 60 provides hourly data for flexibility
+!=========================================================================

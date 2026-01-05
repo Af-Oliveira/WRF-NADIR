@@ -1,0 +1,80 @@
+&share
+ wrf_core = 'ARW',
+ max_dom = {{MAX_DOM}},
+ start_date = '{{START_DATE}}', '{{START_DATE}}', '{{START_DATE}}',
+ end_date   = '{{END_DATE}}', '{{END_DATE}}', '{{END_DATE}}',
+ interval_seconds = {{INTERVAL_SECONDS}},
+ io_form_geogrid = 2,
+ opt_output_from_geogrid_path = '{{WORKSPACE_WPS}}/',
+ debug_level = 0,
+/
+
+&geogrid
+!=========================================================================
+! Domain 01: Synoptic Scale (Europe/Atlantic)
+! Resolution: ~27km
+! Coverage: ~3200km x 2700km
+!=========================================================================
+! Domain 02: Regional Scale (Iberian Peninsula)
+! Resolution: ~9km (27km / 3)
+! Coverage: ~1350km x 1620km
+!=========================================================================
+! Domain 03: Local Scale (Portugal High-Resolution)
+! Resolution: ~3km (9km / 3)
+! Coverage: ~600km x 900km
+!=========================================================================
+
+ parent_id         = 1,   1,   2,
+ parent_grid_ratio = 1,   {{D02_PARENT_GRID_RATIO}},   {{D03_PARENT_GRID_RATIO}},
+ i_parent_start    = 1,   {{D02_I_PARENT_START}},   {{D03_I_PARENT_START}},
+ j_parent_start    = 1,   {{D02_J_PARENT_START}},   {{D03_J_PARENT_START}},
+ 
+ e_we              = {{D01_E_WE}},  {{D02_E_WE}},  {{D03_E_WE}},
+ e_sn              = {{D01_E_SN}},  {{D02_E_SN}},  {{D03_E_SN}},
+ 
+ geog_data_res     = 'default', 'default', 'default',
+ 
+ dx = {{D01_DX}},
+ dy = {{D01_DY}},
+ 
+ map_proj  = '{{MAP_PROJ}}',
+ ref_lat   = {{REF_LAT}},
+ ref_lon   = {{REF_LON}},
+ truelat1  = {{TRUELAT1}},
+ truelat2  = {{TRUELAT2}},
+ stand_lon = {{STAND_LON}},
+ 
+ geog_data_path = '{{GEOG_DATA_PATH}}',
+ opt_geogrid_tbl_path = '{{WPS_DIR}}/geogrid/',
+/
+
+&ungrib
+ out_format = 'WPS',
+ prefix = 'FILE',
+/
+
+&metgrid
+ fg_name = 'FILE',
+ io_form_metgrid = 2,
+ opt_output_from_metgrid_path = '{{WORKSPACE_WPS}}/',
+ opt_metgrid_tbl_path = '{{WPS_DIR}}/metgrid/',
+/
+
+!=========================================================================
+! DOMAIN NESTING VERIFICATION (Auto-calculated by generate_namelists.py)
+!=========================================================================
+! The following constraints must be satisfied for proper nesting:
+!
+! 1. Grid ratio rule: parent_grid_ratio must divide evenly
+!    d02: ({{D02_E_WE}} - 1) mod {{D02_PARENT_GRID_RATIO}} = 0 ✓
+!    d03: ({{D03_E_WE}} - 1) mod {{D03_PARENT_GRID_RATIO}} = 0 ✓
+!
+! 2. Nest must fit within parent domain
+!    d02 end_i = {{D02_I_PARENT_START}} + ({{D02_E_WE}}-1)/{{D02_PARENT_GRID_RATIO}} <= {{D01_E_WE}}
+!    d02 end_j = {{D02_J_PARENT_START}} + ({{D02_E_SN}}-1)/{{D02_PARENT_GRID_RATIO}} <= {{D01_E_SN}}
+!
+! 3. Resolution at each domain:
+!    d01: {{D01_DX}}m = 27km
+!    d02: {{D01_DX}}/{{D02_PARENT_GRID_RATIO}} = 9km
+!    d03: 9km/{{D03_PARENT_GRID_RATIO}} = 3km
+!=========================================================================

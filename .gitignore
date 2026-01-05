@@ -1,0 +1,5 @@
+# WRF-FWI Portugal
+workspace/
+GFS_DATA/
+__pycache__/
+
