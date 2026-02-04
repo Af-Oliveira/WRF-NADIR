@@ -3,18 +3,18 @@
  run_hours                           = {{RUN_HOURS}},
  run_minutes                         = 0,
  run_seconds                         = 0,
- start_year                          = {{START_YEAR}},  {{START_YEAR}},  {{START_YEAR}},
- start_month                         = {{START_MONTH}}, {{START_MONTH}}, {{START_MONTH}},
- start_day                           = {{START_DAY}},   {{START_DAY}},   {{START_DAY}},
- start_hour                          = {{START_HOUR}},  {{START_HOUR}},  {{START_HOUR}},
- end_year                            = {{END_YEAR}},    {{END_YEAR}},    {{END_YEAR}},
- end_month                           = {{END_MONTH}},   {{END_MONTH}},   {{END_MONTH}},
- end_day                             = {{END_DAY}},     {{END_DAY}},     {{END_DAY}},
- end_hour                            = {{END_HOUR}},    {{END_HOUR}},    {{END_HOUR}},
+ start_year                          = {{START_YEAR_ARRAY}},
+ start_month                         = {{START_MONTH_ARRAY}},
+ start_day                           = {{START_DAY_ARRAY}},
+ start_hour                          = {{START_HOUR_ARRAY}},
+ end_year                            = {{END_YEAR_ARRAY}},
+ end_month                           = {{END_MONTH_ARRAY}},
+ end_day                             = {{END_DAY_ARRAY}},
+ end_hour                            = {{END_HOUR_ARRAY}},
  interval_seconds                    = {{INTERVAL_SECONDS}},
- input_from_file                     = .true., .true., .true.,
- history_interval                    = {{HISTORY_INTERVAL}}, {{HISTORY_INTERVAL}}, {{HISTORY_INTERVAL}},
- frames_per_outfile                  = {{FRAMES_PER_OUTFILE}}, {{FRAMES_PER_OUTFILE}}, {{FRAMES_PER_OUTFILE}},
+ input_from_file                     = {{INPUT_FROM_FILE_ARRAY}},
+ history_interval                    = {{HISTORY_INTERVAL_ARRAY}},
+ frames_per_outfile                  = {{FRAMES_PER_OUTFILE_ARRAY}},
  restart                             = .false.,
  restart_interval                    = {{RESTART_INTERVAL}},
  io_form_history                     = 2,
@@ -22,7 +22,7 @@
  io_form_input                       = 2,
  io_form_boundary                    = 2,
  auxinput4_inname                    = 'wrflowinp_d<domain>',
- auxinput4_interval                  = 360, 360, 360,
+ auxinput4_interval                  = {{AUXINPUT4_INTERVAL_ARRAY}},
  io_form_auxinput4                   = 2,
  debug_level                         = 0,
 /
@@ -32,21 +32,21 @@
  time_step_fract_num                 = 0,
  time_step_fract_den                 = 1,
  max_dom                             = {{MAX_DOM}},
- e_we                                = {{D01_E_WE}},   {{D02_E_WE}},   {{D03_E_WE}},
- e_sn                                = {{D01_E_SN}},   {{D02_E_SN}},   {{D03_E_SN}},
- e_vert                              = {{E_VERT}},     {{E_VERT}},     {{E_VERT}},
+ e_we                                = {{E_WE_ARRAY}},
+ e_sn                                = {{E_SN_ARRAY}},
+ e_vert                              = {{E_VERT_ARRAY}},
  dzstretch_s                         = 1.1,
  p_top_requested                     = {{P_TOP}},
  num_metgrid_levels                  = {{NUM_METGRID_LEVELS}},
  num_metgrid_soil_levels             = {{NUM_METGRID_SOIL_LEVELS}},
- dx                                  = {{D01_DX}},  {{D02_DX}},  {{D03_DX}},
- dy                                  = {{D01_DY}},  {{D02_DY}},  {{D03_DY}},
- grid_id                             = 1,     2,     3,
- parent_id                           = 0,     1,     2,
- i_parent_start                      = 1,     {{D02_I_PARENT_START}},  {{D03_I_PARENT_START}},
- j_parent_start                      = 1,     {{D02_J_PARENT_START}},  {{D03_J_PARENT_START}},
- parent_grid_ratio                   = 1,     {{D02_PARENT_GRID_RATIO}},  {{D03_PARENT_GRID_RATIO}},
- parent_time_step_ratio              = 1,     {{D02_PARENT_GRID_RATIO}},  {{D03_PARENT_GRID_RATIO}},
+ dx                                  = {{DX_ARRAY}},
+ dy                                  = {{DY_ARRAY}},
+ grid_id                             = {{GRID_ID_ARRAY}},
+ parent_id                           = {{PARENT_ID_WRF_ARRAY}},
+ i_parent_start                      = {{I_PARENT_START_ARRAY}},
+ j_parent_start                      = {{J_PARENT_START_ARRAY}},
+ parent_grid_ratio                   = {{PARENT_GRID_RATIO_ARRAY}},
+ parent_time_step_ratio              = {{PARENT_TIME_STEP_RATIO_ARRAY}},
  feedback                            = 1,
  smooth_option                       = 0,
  nproc_x                             = {{NUM_TILES_X}},
@@ -61,32 +61,32 @@
 !=========================================================================
  
  ! Microphysics: Thompson (8) - good precipitation forecasts
- mp_physics                          = {{MP_PHYSICS}},    {{MP_PHYSICS}},    {{MP_PHYSICS}},
+ mp_physics                          = {{MP_PHYSICS_ARRAY}},
  
- ! Cumulus: Kain-Fritsch for coarse domains, explicit for d03
- cu_physics                          = {{CU_PHYSICS_D01}}, {{CU_PHYSICS_D02}}, {{CU_PHYSICS_D03}},
+ ! Cumulus: Kain-Fritsch for coarse domains, explicit for fine resolution
+ cu_physics                          = {{CU_PHYSICS_ARRAY}},
  
  ! Radiation: RRTMG (4) - accurate for surface energy balance
- ra_lw_physics                       = {{RA_LW_PHYSICS}}, {{RA_LW_PHYSICS}}, {{RA_LW_PHYSICS}},
- ra_sw_physics                       = {{RA_SW_PHYSICS}}, {{RA_SW_PHYSICS}}, {{RA_SW_PHYSICS}},
- radt                                = {{RADT}},          {{RADT}},          {{RADT}},
+ ra_lw_physics                       = {{RA_LW_PHYSICS_ARRAY}},
+ ra_sw_physics                       = {{RA_SW_PHYSICS_ARRAY}},
+ radt                                = {{RADT_ARRAY}},
  
  ! PBL: YSU (1) - reliable for temperature and wind profiles
- bl_pbl_physics                      = {{BL_PBL_PHYSICS}}, {{BL_PBL_PHYSICS}}, {{BL_PBL_PHYSICS}},
- bldt                                = 0,     0,     0,
+ bl_pbl_physics                      = {{BL_PBL_PHYSICS_ARRAY}},
+ bldt                                = {{BLDT_ARRAY}},
  
  ! Surface Layer: MM5 Monin-Obukhov (1)
- sf_sfclay_physics                   = {{SF_SFCLAY_PHYSICS}}, {{SF_SFCLAY_PHYSICS}}, {{SF_SFCLAY_PHYSICS}},
+ sf_sfclay_physics                   = {{SF_SFCLAY_PHYSICS_ARRAY}},
  
  ! Land Surface: Noah-MP (4) - best for fire weather variables
  ! Provides accurate soil moisture, surface temperature, humidity
- sf_surface_physics                  = {{SF_SURFACE_PHYSICS}}, {{SF_SURFACE_PHYSICS}}, {{SF_SURFACE_PHYSICS}},
+ sf_surface_physics                  = {{SF_SURFACE_PHYSICS_ARRAY}},
  num_land_cat                        = {{NUM_LAND_CAT}},
  num_soil_layers                     = {{NUM_SOIL_LAYERS}},
  
  ! Additional options
  icloud                              = 1,
- sf_urban_physics                    = 0,     0,     0,
+ sf_urban_physics                    = {{SF_URBAN_PHYSICS_ARRAY}},
  
  ! SST update (if running > 24h with varying SST)
  sst_update                          = 0,
@@ -99,21 +99,21 @@
 &dynamics
  hybrid_opt                          = 2,
  w_damping                           = 0,
- diff_opt                            = 2,      2,      2,
- km_opt                              = 4,      4,      4,
- diff_6th_opt                        = 0,      0,      0,
- diff_6th_factor                     = 0.12,   0.12,   0.12,
+ diff_opt                            = {{DIFF_OPT_ARRAY}},
+ km_opt                              = {{KM_OPT_ARRAY}},
+ diff_6th_opt                        = {{DIFF_6TH_OPT_ARRAY}},
+ diff_6th_factor                     = {{DIFF_6TH_FACTOR_ARRAY}},
  base_temp                           = 290.,
  damp_opt                            = 3,
- zdamp                               = 5000.,  5000.,  5000.,
- dampcoef                            = 0.2,    0.2,    0.2,
- khdif                               = 0,      0,      0,
- kvdif                               = 0,      0,      0,
- non_hydrostatic                     = .true., .true., .true.,
- moist_adv_opt                       = 1,      1,      1,
- scalar_adv_opt                      = 1,      1,      1,
- gwd_opt                             = 1,      0,      0,
- epssm                               = 0.1,    0.1,    0.1,
+ zdamp                               = {{ZDAMP_ARRAY}},
+ dampcoef                            = {{DAMPCOEF_ARRAY}},
+ khdif                               = {{KHDIF_ARRAY}},
+ kvdif                               = {{KVDIF_ARRAY}},
+ non_hydrostatic                     = {{NON_HYDROSTATIC_ARRAY}},
+ moist_adv_opt                       = {{MOIST_ADV_OPT_ARRAY}},
+ scalar_adv_opt                      = {{SCALAR_ADV_OPT_ARRAY}},
+ gwd_opt                             = {{GWD_OPT_ARRAY}},
+ epssm                               = {{EPSSM_ARRAY}},
 /
 
 &bdy_control
@@ -130,6 +130,11 @@
 /
 
 !=========================================================================
+! CONFIGURATION SUMMARY (Auto-generated by generate_namelists.py)
+!=========================================================================
+! Number of domains: {{MAX_DOM}}
+! Simulation period: {{START_DATE}} to {{END_DATE}}
+!
 ! NOTES FOR FWI POST-PROCESSING
 !=========================================================================
 ! The Canadian Fire Weather Index (FWI) System requires:

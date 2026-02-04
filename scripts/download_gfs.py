@@ -16,7 +16,7 @@ Usage:
     python gdex-download.py --start 2025-12-02 --end 2025-12-04 --hour 00
     python gdex-download.py --start 2025-12-02 --end 2025-12-04 --hour 00 --output ~/Models/WRF_TUTORIAL/GFS_DATA
 
-Author: WRF-FIRE-PT Project
+Author: WRF Project
 """
 
 import sys
@@ -44,7 +44,7 @@ DEFAULT_FORECAST_HOURS = list(range(0, 25, 3))  # f000, f003, f006, ..., f024
 CHUNK_SIZE = 1024 * 1024  # 1 MB chunks
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # seconds
-MAX_PARALLEL_DOWNLOADS = 4
+MAX_PARALLEL_DOWNLOADS = 2
 
 # Lock for thread-safe printing
 print_lock = threading.Lock()

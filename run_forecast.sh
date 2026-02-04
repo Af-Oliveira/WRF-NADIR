@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# WRF-FWI Portugal: Main Entry Point
+# WRF: Main Entry Point
 # =============================================================================
 # This script orchestrates the complete WRF forecast workflow:
 #   1. Generate namelists from configuration
@@ -76,13 +76,13 @@ done
 source "$SCRIPT_DIR/scripts/utils.sh"
 
 # =============================================================================
-log_step "WRF-FWI Portugal Forecast System"
+log_step "WRF Forecast System"
 # =============================================================================
 
 echo "
 ╔═══════════════════════════════════════════════════════════════╗
 ║                                                               ║
-║   🌍 WRF-FWI Portugal                                         ║
+║   🌍 WRF                                     ║
 ║   Portable Downscaling Wrapper for Fire Weather Index         ║
 ║                                                               ║
 ║   Triple-Nested Domain Configuration:                         ║
@@ -135,7 +135,12 @@ echo "  WPS Installation:    $WPS_DIR"
 echo "  Geographic Data:     $GEOG_DATA_PATH"
 echo "  GFS Data:            $GFS_DATA_DIR"
 echo ""
-echo "  Simulation Period:   $START_DATE to $END_DATE"
+if [[ -n "${END_DATE:-}" ]]; then
+    echo "  Fixed END_DATE:      $END_DATE"
+else
+   echo "  Simulation Period:   $START_DATE to $END_DATE"
+fi
+
 if [[ -n "${FORECAST_DURATION_HOURS:-}" ]]; then
     echo "  Forecast Duration:   ${FORECAST_DURATION_HOURS} hours"
 fi
@@ -143,10 +148,15 @@ echo "  Number of Domains:   $MAX_DOM"
 echo ""
 echo "  Resolutions:"
 echo "    d01: ${D01_DX}m ($(echo "scale=0; ${D01_DX}/1000" | bc)km)"
-d02_dx=$((D01_DX / D02_PARENT_GRID_RATIO))
-d03_dx=$((d02_dx / D03_PARENT_GRID_RATIO))
-echo "    d02: ${d02_dx}m ($(echo "scale=0; ${d02_dx}/1000" | bc)km)"
-echo "    d03: ${d03_dx}m ($(echo "scale=1; ${d03_dx}/1000" | bc)km)"
+if [[ $MAX_DOM -ge 2 ]]; then
+    d02_dx=$((D01_DX / D02_PARENT_GRID_RATIO))
+    echo "    d02: ${d02_dx}m ($(echo "scale=0; ${d02_dx}/1000" | bc)km)"
+fi
+if [[ $MAX_DOM -ge 3 ]]; then
+    d02_dx=$((D01_DX / D02_PARENT_GRID_RATIO))
+    d03_dx=$((d02_dx / D03_PARENT_GRID_RATIO))
+    echo "    d03: ${d03_dx}m ($(echo "scale=1; ${d03_dx}/1000" | bc)km)"
+fi
 echo ""
 echo "  Options:"
 echo "    Skip WPS:    $SKIP_WPS"
@@ -242,6 +252,6 @@ if [[ -d "${OUTPUT_DIR:-$SCRIPT_DIR/workspace/output}" ]]; then
 fi
 
 echo "║                                                               ║"
-echo "║  🔥 Ready for FWI Post-Processing                             ║"
+echo "║  🔥 Ready for  Post-Processing                                ║"
 echo "╚═══════════════════════════════════════════════════════════════╝"
 echo ""

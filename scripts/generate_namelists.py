@@ -39,6 +39,9 @@ class NamelistGenerator:
         # Calculate derived values
         self.calculate_derived_values()
         
+        # Generate dynamic domain arrays for namelists
+        self.generate_domain_arrays()
+        
         # Validate nesting
         self.validate_nesting()
     
@@ -205,10 +208,154 @@ class NamelistGenerator:
         # Workspace paths
         self.config['WORKSPACE_WPS'] = str(self.output_dir / 'wps')
         self.config['WORKSPACE_WRF'] = str(self.output_dir / 'wrf')
+        if end_dt is not None:
+            print(f"📅 Simulation period: {start_dt} to {end_dt}")
+        print(f"⏱️  Duration: {run_days} days")
         
-        print(f"📅 Simulation period: {start_dt} to {end_dt}")
-        print(f"⏱️  Duration: {run_days} days, {run_hours} hours")
-        print(f"🗺️  Resolutions: d01={d01_dx/1000:.0f}km, d02={d02_dx/1000:.0f}km, d03={d03_dx/1000:.0f}km")
+        # Display resolutions based on MAX_DOM
+        max_dom = int(self.config.get('MAX_DOM', 3))
+        if max_dom == 1:
+            print(f"🗺️  Resolution: d01={d01_dx/1000:.0f}km (single domain)")
+        elif max_dom == 2:
+            print(f"🗺️  Resolutions: d01={d01_dx/1000:.0f}km, d02={d02_dx/1000:.0f}km")
+        else:
+            print(f"🗺️  Resolutions: d01={d01_dx/1000:.0f}km, d02={d02_dx/1000:.0f}km, d03={d03_dx/1000:.0f}km")
+
+    def generate_domain_arrays(self):
+        """Generate dynamic arrays for namelist entries based on MAX_DOM."""
+        max_dom = int(self.config.get('MAX_DOM', 3))
+        
+        print(f"🔧 Generating configuration for {max_dom} domain(s)")
+        
+        # Helper function to create comma-separated value strings
+        def make_array(values, count):
+            """Create a comma-separated string with the first 'count' values."""
+            return ', '.join(str(v) for v in values[:count])
+        
+        # Get configuration values
+        d01_dx = int(self.config.get('D01_DX', 27000))
+        d01_dy = int(self.config.get('D01_DY', 27000))
+        d02_ratio = int(self.config.get('D02_PARENT_GRID_RATIO', 3))
+        d03_ratio = int(self.config.get('D03_PARENT_GRID_RATIO', 3))
+        
+        d02_dx = d01_dx // d02_ratio
+        d02_dy = d01_dy // d02_ratio
+        d03_dx = d02_dx // d03_ratio
+        d03_dy = d02_dy // d03_ratio
+        
+        # =========================================================================
+        # WPS NAMELIST ARRAYS
+        # =========================================================================
+        
+        # &share section
+        start_date = self.config.get('START_DATE', '2025-12-02_00:00:00')
+        end_date = self.config.get('END_DATE', '2025-12-03_00:00:00')
+        self.config['START_DATE_ARRAY'] = make_array([f"'{start_date}'"] * 3, max_dom)
+        self.config['END_DATE_ARRAY'] = make_array([f"'{end_date}'"] * 3, max_dom)
+        
+        # &geogrid section
+        parent_ids = [1, 1, 2]
+        parent_ratios = [1, d02_ratio, d03_ratio]
+        i_parent_starts = [1, int(self.config.get('D02_I_PARENT_START', 35)), int(self.config.get('D03_I_PARENT_START', 40))]
+        j_parent_starts = [1, int(self.config.get('D02_J_PARENT_START', 25)), int(self.config.get('D03_J_PARENT_START', 35))]
+        e_we = [int(self.config.get('D01_E_WE', 120)), int(self.config.get('D02_E_WE', 151)), int(self.config.get('D03_E_WE', 202))]
+        e_sn = [int(self.config.get('D01_E_SN', 100)), int(self.config.get('D02_E_SN', 181)), int(self.config.get('D03_E_SN', 301))]
+        
+        self.config['PARENT_ID_ARRAY'] = make_array(parent_ids, max_dom)
+        self.config['PARENT_GRID_RATIO_ARRAY'] = make_array(parent_ratios, max_dom)
+        self.config['I_PARENT_START_ARRAY'] = make_array(i_parent_starts, max_dom)
+        self.config['J_PARENT_START_ARRAY'] = make_array(j_parent_starts, max_dom)
+        self.config['E_WE_ARRAY'] = make_array(e_we, max_dom)
+        self.config['E_SN_ARRAY'] = make_array(e_sn, max_dom)
+        self.config['GEOG_DATA_RES_ARRAY'] = make_array(["'default'"] * 3, max_dom)
+        
+        # =========================================================================
+        # WRF NAMELIST ARRAYS
+        # =========================================================================
+        
+        # &time_control section
+        start_year = self.config.get('START_YEAR', '2025')
+        start_month = self.config.get('START_MONTH', '12')
+        start_day = self.config.get('START_DAY', '02')
+        start_hour = self.config.get('START_HOUR', '00')
+        end_year = self.config.get('END_YEAR', '2025')
+        end_month = self.config.get('END_MONTH', '12')
+        end_day = self.config.get('END_DAY', '03')
+        end_hour = self.config.get('END_HOUR', '00')
+        
+        self.config['START_YEAR_ARRAY'] = make_array([start_year] * 3, max_dom)
+        self.config['START_MONTH_ARRAY'] = make_array([start_month] * 3, max_dom)
+        self.config['START_DAY_ARRAY'] = make_array([start_day] * 3, max_dom)
+        self.config['START_HOUR_ARRAY'] = make_array([start_hour] * 3, max_dom)
+        self.config['END_YEAR_ARRAY'] = make_array([end_year] * 3, max_dom)
+        self.config['END_MONTH_ARRAY'] = make_array([end_month] * 3, max_dom)
+        self.config['END_DAY_ARRAY'] = make_array([end_day] * 3, max_dom)
+        self.config['END_HOUR_ARRAY'] = make_array([end_hour] * 3, max_dom)
+        
+        history_interval = self.config.get('HISTORY_INTERVAL', '60')
+        frames_per_outfile = self.config.get('FRAMES_PER_OUTFILE', '24')
+        self.config['HISTORY_INTERVAL_ARRAY'] = make_array([history_interval] * 3, max_dom)
+        self.config['FRAMES_PER_OUTFILE_ARRAY'] = make_array([frames_per_outfile] * 3, max_dom)
+        self.config['INPUT_FROM_FILE_ARRAY'] = make_array(['.true.'] * 3, max_dom)
+        self.config['AUXINPUT4_INTERVAL_ARRAY'] = make_array([360] * 3, max_dom)
+        
+        # &domains section
+        e_vert = self.config.get('E_VERT', '45')
+        dx_values = [d01_dx, d02_dx, d03_dx]
+        dy_values = [d01_dy, d02_dy, d03_dy]
+        grid_ids = [1, 2, 3]
+        parent_ids_wrf = [0, 1, 2]
+        
+        self.config['E_VERT_ARRAY'] = make_array([e_vert] * 3, max_dom)
+        self.config['DX_ARRAY'] = make_array(dx_values, max_dom)
+        self.config['DY_ARRAY'] = make_array(dy_values, max_dom)
+        self.config['GRID_ID_ARRAY'] = make_array(grid_ids, max_dom)
+        self.config['PARENT_ID_WRF_ARRAY'] = make_array(parent_ids_wrf, max_dom)
+        self.config['PARENT_TIME_STEP_RATIO_ARRAY'] = make_array(parent_ratios, max_dom)
+        
+        # &physics section - per-domain physics options
+        mp_physics = self.config.get('MP_PHYSICS', '8')
+        ra_lw = self.config.get('RA_LW_PHYSICS', '4')
+        ra_sw = self.config.get('RA_SW_PHYSICS', '4')
+        radt = self.config.get('RADT', '15')
+        bl_pbl = self.config.get('BL_PBL_PHYSICS', '1')
+        sf_sfclay = self.config.get('SF_SFCLAY_PHYSICS', '1')
+        sf_surface = self.config.get('SF_SURFACE_PHYSICS', '4')
+        
+        # Cumulus: Usually on for coarse domains, off for fine resolution
+        cu_d01 = self.config.get('CU_PHYSICS_D01', '1')
+        cu_d02 = self.config.get('CU_PHYSICS_D02', '1')
+        cu_d03 = self.config.get('CU_PHYSICS_D03', '0')
+        cu_values = [cu_d01, cu_d02, cu_d03]
+        
+        self.config['MP_PHYSICS_ARRAY'] = make_array([mp_physics] * 3, max_dom)
+        self.config['CU_PHYSICS_ARRAY'] = make_array(cu_values, max_dom)
+        self.config['RA_LW_PHYSICS_ARRAY'] = make_array([ra_lw] * 3, max_dom)
+        self.config['RA_SW_PHYSICS_ARRAY'] = make_array([ra_sw] * 3, max_dom)
+        self.config['RADT_ARRAY'] = make_array([radt] * 3, max_dom)
+        self.config['BL_PBL_PHYSICS_ARRAY'] = make_array([bl_pbl] * 3, max_dom)
+        self.config['SF_SFCLAY_PHYSICS_ARRAY'] = make_array([sf_sfclay] * 3, max_dom)
+        self.config['SF_SURFACE_PHYSICS_ARRAY'] = make_array([sf_surface] * 3, max_dom)
+        self.config['BLDT_ARRAY'] = make_array([0] * 3, max_dom)
+        self.config['SF_URBAN_PHYSICS_ARRAY'] = make_array([0] * 3, max_dom)
+        
+        # &dynamics section
+        self.config['DIFF_OPT_ARRAY'] = make_array([2] * 3, max_dom)
+        self.config['KM_OPT_ARRAY'] = make_array([4] * 3, max_dom)
+        self.config['DIFF_6TH_OPT_ARRAY'] = make_array([0] * 3, max_dom)
+        self.config['DIFF_6TH_FACTOR_ARRAY'] = make_array([0.12] * 3, max_dom)
+        self.config['ZDAMP_ARRAY'] = make_array([5000.] * 3, max_dom)
+        self.config['DAMPCOEF_ARRAY'] = make_array([0.2] * 3, max_dom)
+        self.config['KHDIF_ARRAY'] = make_array([0] * 3, max_dom)
+        self.config['KVDIF_ARRAY'] = make_array([0] * 3, max_dom)
+        self.config['NON_HYDROSTATIC_ARRAY'] = make_array(['.true.'] * 3, max_dom)
+        self.config['MOIST_ADV_OPT_ARRAY'] = make_array([1] * 3, max_dom)
+        self.config['SCALAR_ADV_OPT_ARRAY'] = make_array([1] * 3, max_dom)
+        self.config['EPSSM_ARRAY'] = make_array([0.1] * 3, max_dom)
+        
+        # GWD: typically only for outer domain
+        gwd_values = [1, 0, 0]
+        self.config['GWD_OPT_ARRAY'] = make_array(gwd_values, max_dom)
     
     def validate_nesting(self):
         """Validate that nesting configuration is mathematically correct."""
