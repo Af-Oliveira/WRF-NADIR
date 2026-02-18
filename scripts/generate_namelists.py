@@ -112,11 +112,31 @@ class NamelistGenerator:
         return value
     
     def parse_datetime(self, date_str: str) -> datetime:
-        """Parse a date string in various formats to datetime object."""
+        """Parse a date string in various formats to datetime object.
+        
+        Supports hour offsets >= 24 (e.g. 2026-02-16_24:00:00) which are
+        normalized by adding the extra hours to midnight of the given date.
+        This allows splitting forecasts into chunks:
+            2026-02-16_00:00:00  -> Feb 16 00Z
+            2026-02-16_24:00:00  -> Feb 17 00Z
+            2026-02-16_48:00:00  -> Feb 18 00Z
+        """
         if not date_str:
             return None
-            
-        # Handle different date formats
+        
+        # Check for hour >= 24 offset notation (e.g. 2026-02-16_24:00:00)
+        if '_' in date_str:
+            parts = date_str.split('_', 1)
+            time_part = parts[1]
+            time_components = time_part.split(':')
+            hour = int(time_components[0])
+            if hour >= 24:
+                base_date = datetime.strptime(parts[0], '%Y-%m-%d')
+                minutes = int(time_components[1]) if len(time_components) > 1 else 0
+                seconds = int(time_components[2]) if len(time_components) > 2 else 0
+                return base_date + timedelta(hours=hour, minutes=minutes, seconds=seconds)
+        
+        # Handle standard date formats
         for fmt in ['%Y-%m-%d_%H:%M:%S', '%Y-%m-%d_%H', '%Y-%m-%d']:
             try:
                 if '_' in date_str and fmt == '%Y-%m-%d_%H:%M:%S':
@@ -138,6 +158,7 @@ class NamelistGenerator:
         
         # Parse start date
         start_str = self.config.get('START_DATE', '2025-12-02_00:00:00')
+        self.original_start_str = start_str  # Preserve for logging
         start_dt = self.parse_datetime(start_str)
         
         # Check for forecast duration mode
@@ -148,7 +169,12 @@ class NamelistGenerator:
             try:
                 duration_hours = int(forecast_duration_hours)
                 end_dt = start_dt + timedelta(hours=duration_hours)
-                print(f"🔮 Forecast Mode: {duration_hours} hours from {start_dt}")
+                # Show original notation if it used hour >= 24 offset
+                if self.original_start_str != start_dt.strftime('%Y-%m-%d_%H:%M:%S'):
+                    print(f"🔮 Forecast Mode: {duration_hours} hours (offset notation: {self.original_start_str})")
+                    print(f"   Normalized start: {start_dt}")
+                else:
+                    print(f"🔮 Forecast Mode: {duration_hours} hours from {start_dt}")
             except ValueError:
                 raise ValueError(f"Invalid FORECAST_DURATION_HOURS: {forecast_duration_hours}")
         else:

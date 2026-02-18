@@ -13,10 +13,14 @@ source "$SCRIPT_DIR/utils.sh"
 
 # Load configuration
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-source "$PROJECT_DIR/config.env"
+source <(tr -d '\r' < "$PROJECT_DIR/config.env")
 
-# Override PROJECT_DIR from config to actual location
-export PROJECT_DIR="$PROJECT_DIR"
+# Fix paths: process substitution breaks BASH_SOURCE -> PROJECT_DIR=/dev/fd
+export PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+export GFS_DATA_DIR="${PROJECT_DIR}/GFS_DATA"
+export WORKSPACE_DIR="${PROJECT_DIR}/workspace"
+export OUTPUT_DIR="${PROJECT_DIR}/workspace/output"
+export LOG_FILE="${PROJECT_DIR}/workspace/logs/wrf_forecast.log"
 
 # Set workspace
 WPS_WORKSPACE="${WORKSPACE_DIR:-$PROJECT_DIR/workspace}/wps"

@@ -13,15 +13,18 @@ source "$SCRIPT_DIR/utils.sh"
 
 # Load configuration
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-source "$PROJECT_DIR/config.env"
+source <(tr -d '\r' < "$PROJECT_DIR/config.env")
 
-# Override PROJECT_DIR from config to actual location
-export PROJECT_DIR="$PROJECT_DIR"
+# Fix paths: process substitution breaks BASH_SOURCE -> PROJECT_DIR=/dev/fd
+export PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+export GFS_DATA_DIR="${PROJECT_DIR}/GFS_DATA"
+export WORKSPACE_DIR="${PROJECT_DIR}/workspace"
+export OUTPUT_DIR="${PROJECT_DIR}/workspace/output"
+export LOG_FILE="${PROJECT_DIR}/workspace/logs/wrf_forecast.log"
 
 # Set workspaces
-WPS_WORKSPACE="${WORKSPACE_DIR:-$PROJECT_DIR/workspace}/wps"
-WRF_WORKSPACE="${WORKSPACE_DIR:-$PROJECT_DIR/workspace}/wrf"
-OUTPUT_DIR="${OUTPUT_DIR:-$PROJECT_DIR/workspace/output}"
+WPS_WORKSPACE="${WORKSPACE_DIR}/wps"
+WRF_WORKSPACE="${WORKSPACE_DIR}/wrf"
 
 # =============================================================================
 log_step "WRF EXECUTION - WRF-FWI Portugal"
@@ -216,6 +219,46 @@ for dom in $(seq 1 ${MAX_DOM:-1}); do
 done
 
 log_success "Moved $OUTPUT_COUNT output files to $OUTPUT_DIR"
+
+# -------------------------------------------------------------------------
+# Rename output files to reflect forecast offset if START_DATE used hour>=24
+# E.g. wrfout_d01_2026-02-17_00:00:00 -> wrfout_d01_2026-02-16_24:00:00
+# This preserves the user's original offset-based naming convention.
+# -------------------------------------------------------------------------
+orig_sd="${ORIGINAL_START_DATE:-$START_DATE}"
+orig_date_part="${orig_sd%%_*}"
+orig_time_part="${orig_sd#*_}"
+orig_hour="${orig_time_part%%:*}"
+
+if [[ "$orig_hour" -ge 24 ]]; then
+    log_info "Renaming output files to reflect forecast offset (base: ${orig_date_part}, hour offset: ${orig_hour}+)"
+    base_epoch=$(date -d "${orig_date_part} 00:00:00" +%s)
+
+    for outfile in "$OUTPUT_DIR"/wrfout_d*; do
+        [[ -f "$outfile" ]] || continue
+        fname=$(basename "$outfile")
+
+        # Extract domain part (e.g. d01) and datetime from filename
+        # Format: wrfout_d01_2026-02-17_00:00:00
+        domain=$(echo "$fname" | grep -oP 'd\d+')
+        file_datetime=$(echo "$fname" | sed 's/wrfout_d[0-9]*_//')
+        file_datetime_parsed="${file_datetime//_/ }"
+
+        # Calculate offset hours from the original base date midnight
+        file_epoch=$(date -d "$file_datetime_parsed" +%s)
+        offset_seconds=$((file_epoch - base_epoch))
+        offset_hours=$((offset_seconds / 3600))
+        offset_minutes=$(( (offset_seconds % 3600) / 60 ))
+        offset_secs=$((offset_seconds % 60))
+
+        new_name="wrfout_${domain}_${orig_date_part}_$(printf '%03d' $offset_hours):$(printf '%02d' $offset_minutes):$(printf '%02d' $offset_secs)"
+
+        if [[ "$fname" != "$new_name" ]]; then
+            mv "$OUTPUT_DIR/$fname" "$OUTPUT_DIR/$new_name"
+            log_info "  Renamed: $fname -> $new_name"
+        fi
+    done
+fi
 
 # List outputs
 echo ""

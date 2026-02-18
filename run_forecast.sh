@@ -100,21 +100,50 @@ if [[ ! -f "$CONFIG_FILE" ]]; then
 fi
 
 log_info "Loading configuration from: $CONFIG_FILE"
-source "$CONFIG_FILE"
+# Source config through tr to strip any Windows CRLF line endings.
+# NOTE: process substitution <(...) makes BASH_SOURCE=/dev/fd/XX, which
+# breaks PROJECT_DIR in config.env. We re-set it and derived paths below.
+source <(tr -d '\r' < "$CONFIG_FILE")
+export PROJECT_DIR="$SCRIPT_DIR"
+export GFS_DATA_DIR="${PROJECT_DIR}/GFS_DATA"
+export WORKSPACE_DIR="${PROJECT_DIR}/workspace"
+export OUTPUT_DIR="${PROJECT_DIR}/workspace/output"
+export LOG_FILE="${PROJECT_DIR}/workspace/logs/wrf_forecast.log"
+
+# -------------------------------------------------------------------------
+# Normalize START_DATE: handle hour>=24 (e.g. 2026-02-16_24:00:00)
+# This lets users split forecasts into chunks. For example:
+#   Run 1: START_DATE=2026-02-16_00:00:00  DURATION=24  (f000-f024)
+#   Run 2: START_DATE=2026-02-16_24:00:00  DURATION=24  (f024-f048)
+#   Run 3: START_DATE=2026-02-16_48:00:00  DURATION=24  (f048-f072)
+# The hour value is treated as an offset from midnight of the given date.
+# -------------------------------------------------------------------------
+
+# Save original START_DATE for output file naming (before normalization)
+export ORIGINAL_START_DATE="$START_DATE"
+
+start_date_part="${START_DATE%%_*}"
+start_time_part="${START_DATE#*_}"
+start_hour="${start_time_part%%:*}"
+
+if [[ "$start_hour" -ge 24 ]]; then
+    normalized_dt=$(date -d "${start_date_part} 00:00:00 ${start_hour} hours" "+%Y-%m-%d_%H:%M:%S")
+    log_info "Normalized START_DATE: ${START_DATE} -> ${normalized_dt}"
+    START_DATE="${normalized_dt}"
+    export START_DATE
+fi
 
 # Calculate END_DATE from FORECAST_DURATION_HOURS if set
 if [[ -n "${FORECAST_DURATION_HOURS:-}" ]]; then
-    # Parse START_DATE (format: YYYY-MM-DD_HH:MM:SS)
-    start_date_part="${START_DATE%%_*}"
-    start_time_part="${START_DATE#*_}"
-    start_hour="${start_time_part%%:*}"
-    
-    # Calculate end date using date command
-    END_DATE=$(date -d "${start_date_part} ${start_hour}:00:00 ${FORECAST_DURATION_HOURS} hours" "+%Y-%m-%d_%H:00:00")
+    # Replace _ with space so date can parse YYYY-MM-DD HH:MM:SS
+    start_datetime="${START_DATE//_/ }"
+
+    END_DATE=$(date -d "${start_datetime} ${FORECAST_DURATION_HOURS} hours" "+%Y-%m-%d_%H:%M:%S")
     export END_DATE
-    
+
     log_info "Forecast Mode: ${FORECAST_DURATION_HOURS} hours"
-    log_info "Calculated END_DATE: ${END_DATE}"
+    log_info "  START_DATE: ${START_DATE}"
+    log_info "  END_DATE:   ${END_DATE}"
 fi
 
 # Export clean workspace setting
