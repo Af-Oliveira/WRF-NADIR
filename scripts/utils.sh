@@ -315,15 +315,63 @@ link_gfs_data() {
     
     cd "$workspace" || return 1
     
-    # Count GRIB files
-    local grib_count=$(find "$gfs_dir" -name "*.grib2" -o -name "*.grb2" | wc -l)
+    # Determine the correct subdirectory based on START_DATE
+    # START_DATE format: YYYY-MM-DD_HH:MM:SS -> extract YYYYMMDD for folder name
+    local start_ymd=$(echo "${START_DATE}" | sed 's/[-_:]//g' | cut -c1-8)
+    
+    # Calculate max forecast hour needed from FORECAST_DURATION_HOURS or END_DATE
+    local max_fhr="${FORECAST_DURATION_HOURS:-72}"
+    
+    local gfs_subdir="${gfs_dir}/${start_ymd}"
+    
+    if [[ -d "$gfs_subdir" ]]; then
+        log_info "Using GFS data from date folder: ${start_ymd}/"
+        local search_dir="$gfs_subdir"
+    else
+        log_warning "Date folder ${start_ymd}/ not found, searching all of $gfs_dir"
+        local search_dir="$gfs_dir"
+    fi
+    
+    # Count GRIB files in the target directory (non-recursive for date folder)
+    local grib_count
+    if [[ "$search_dir" == "$gfs_subdir" ]]; then
+        grib_count=$(find "$search_dir" -maxdepth 1 -name "*.grib2" -o -name "*.grb2" | wc -l)
+    else
+        grib_count=$(find "$search_dir" -name "*.grib2" -o -name "*.grb2" | wc -l)
+    fi
     
     if [[ $grib_count -eq 0 ]]; then
-        log_error "No GRIB2 files found in $gfs_dir"
+        log_error "No GRIB2 files found in $search_dir"
         return 1
     fi
     
-    log_info "Found $grib_count GRIB2 files"
+    log_info "Found $grib_count GRIB2 files in $search_dir"
+    
+    # Filter to only the forecast hours we need (f000 through f${max_fhr})
+    # Build a list of needed files
+    local needed_files=()
+    local fhr=0
+    local interval=3  # GFS interval in hours
+    
+    while [[ $fhr -le $max_fhr ]]; do
+        local fhr_str=$(printf "f%03d" $fhr)
+        local pattern="*${fhr_str}*"
+        
+        while IFS= read -r -d '' f; do
+            needed_files+=("$f")
+        done < <(find "$search_dir" -maxdepth 1 -type f \( -name "*.grib2" -o -name "*.grb2" \) -name "$pattern" -print0)
+        
+        ((fhr += interval))
+    done
+    
+    if [[ ${#needed_files[@]} -eq 0 ]]; then
+        log_warning "No files matched forecast hours 0-${max_fhr}, falling back to all files in $search_dir"
+        while IFS= read -r -d '' f; do
+            needed_files+=("$f")
+        done < <(find "$search_dir" -maxdepth 1 -type f \( -name "*.grib2" -o -name "*.grb2" \) -print0 | sort -z)
+    fi
+    
+    log_info "Selected ${#needed_files[@]} files for forecast hours 0-${max_fhr}h"
     
     # Remove old GRIBFILE links
     rm -f GRIBFILE.* 2>/dev/null
@@ -331,10 +379,10 @@ link_gfs_data() {
     # Alphabet array for creating AAA, AAB, AAC... suffixes
     local alphabet=(A B C D E F G H I J K L M N O P Q R S T U V W X Y Z)
     
-    # Create links with alphabetical naming
+    # Sort the needed files and create links
     local file_index=0
     
-    while IFS= read -r -d '' grib_file; do
+    while IFS= read -r grib_file; do
         if [[ -f "$grib_file" ]]; then
             # Calculate letter indices (base-26)
             local i1=$((file_index / 676))       # First letter
@@ -347,7 +395,7 @@ link_gfs_data() {
             ln -sf "$grib_file" "GRIBFILE.$suffix"
             ((file_index++))
         fi
-    done < <(find "$gfs_dir" -type f \( -name "*.grib2" -o -name "*.grb2" \) -print0 | sort -z)
+    done < <(printf '%s\n' "${needed_files[@]}" | sort)
     
     # Verify links were created
     local link_count=$(ls GRIBFILE.* 2>/dev/null | wc -l)

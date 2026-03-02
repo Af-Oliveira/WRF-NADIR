@@ -236,4 +236,4 @@ This project is provided as-is for research and operational use.
 - [WRF Model](https://www.mmm.ucar.edu/models/wrf)
 - [WRF Users Guide](https://www2.mmm.ucar.edu/wrf/users/)
 - [GFS Data - UCAR GDEX](https://rda.ucar.edu/datasets/ds084.1/)
-- [WRF Instalation Tutorial](https://drive.google.com/drive/folders/15gha6CIVI5ZRbqgdqk89giWLIT1dn7q5)
+- [WRF Instalation](https://github.com/HathewayWill/WRF-MOSIT)

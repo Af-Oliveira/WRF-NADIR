@@ -55,7 +55,7 @@ DEFAULT_FORECAST_HOURS = list(range(0, 25, 3))  # f000, f003, f006, ..., f024
 CHUNK_SIZE = 1024 * 1024  # 1 MB chunks
 MAX_RETRIES = 3
 RETRY_DELAY = 5  # seconds
-MAX_PARALLEL_DOWNLOADS = 1
+MAX_PARALLEL_DOWNLOADS = 2
 
 # Lock for thread-safe printing
 print_lock = threading.Lock()
