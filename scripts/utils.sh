@@ -319,8 +319,11 @@ link_gfs_data() {
     # START_DATE format: YYYY-MM-DD_HH:MM:SS -> extract YYYYMMDD for folder name
     local start_ymd=$(echo "${START_DATE}" | sed 's/[-_:]//g' | cut -c1-8)
     
-    # Calculate max forecast hour needed from FORECAST_DURATION_HOURS or END_DATE
-    local max_fhr="${FORECAST_DURATION_HOURS:-72}"
+    # Extract hour offset from START_DATE (handles offset notation like 24:00:00)
+    local start_time=$(echo "${START_DATE}" | sed 's/.*_//')
+    local start_hour=$(echo "$start_time" | cut -d: -f1)
+    local gfs_start_fhr=$((10#${start_hour:-0}))
+    local max_fhr=$((gfs_start_fhr + ${FORECAST_DURATION_HOURS:-72}))
     
     local gfs_subdir="${gfs_dir}/${start_ymd}"
     
@@ -350,7 +353,7 @@ link_gfs_data() {
     # Filter to only the forecast hours we need (f000 through f${max_fhr})
     # Build a list of needed files
     local needed_files=()
-    local fhr=0
+    local fhr=$gfs_start_fhr
     local interval=3  # GFS interval in hours
     
     while [[ $fhr -le $max_fhr ]]; do
@@ -365,13 +368,13 @@ link_gfs_data() {
     done
     
     if [[ ${#needed_files[@]} -eq 0 ]]; then
-        log_warning "No files matched forecast hours 0-${max_fhr}, falling back to all files in $search_dir"
+        log_warning "No files matched forecast hours ${gfs_start_fhr}-${max_fhr}, falling back to all files in $search_dir"
         while IFS= read -r -d '' f; do
             needed_files+=("$f")
         done < <(find "$search_dir" -maxdepth 1 -type f \( -name "*.grib2" -o -name "*.grb2" \) -print0 | sort -z)
     fi
     
-    log_info "Selected ${#needed_files[@]} files for forecast hours 0-${max_fhr}h"
+    log_info "Selected ${#needed_files[@]} files for forecast hours ${gfs_start_fhr}-${max_fhr}h"
     
     # Remove old GRIBFILE links
     rm -f GRIBFILE.* 2>/dev/null

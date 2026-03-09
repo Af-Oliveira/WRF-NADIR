@@ -103,6 +103,7 @@ log_info "Loading configuration from: $CONFIG_FILE"
 # Source config through tr to strip any Windows CRLF line endings.
 # NOTE: process substitution <(...) makes BASH_SOURCE=/dev/fd/XX, which
 # breaks PROJECT_DIR in config.env. We re-set it and derived paths below.
+export CONFIG_FILE
 source <(tr -d '\r' < "$CONFIG_FILE")
 export PROJECT_DIR="$SCRIPT_DIR"
 export GFS_DATA_DIR="${PROJECT_DIR}/GFS_DATA"

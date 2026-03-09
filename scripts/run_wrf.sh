@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/utils.sh"
 
 # Load configuration
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-source <(tr -d '\r' < "$PROJECT_DIR/config.env")
+source <(tr -d '\r' < "${CONFIG_FILE:-$PROJECT_DIR/config.env}")
 
 # Fix paths: process substitution breaks BASH_SOURCE -> PROJECT_DIR=/dev/fd
 export PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
