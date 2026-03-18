@@ -45,26 +45,26 @@ The system supports a **triple-nested domain** configuration centered on Portuga
 
 | Domain | Resolution | Coverage | Grid Size | Description |
 |--------|------------|----------|-----------|-------------|
-| **d01** | 27 km | Europe/Atlantic | 120 × 100 | Synoptic scale - captures large-scale weather patterns |
-| **d02** | 9 km | Iberian Peninsula | 151 × 181 | Regional scale - resolves mesoscale features |
-| **d03** | 3 km | Portugal | 202 × 301 | High-resolution - explicitly resolves convection |
+| **d01** | 25 km | Europe/Atlantic | 120 × 100 | Synoptic scale - captures large-scale weather patterns |
+| **d02** | ~8.3 km | Iberian Peninsula | 151 × 181 | Regional scale - resolves mesoscale features |
+| **d03** | ~2.8 km | Portugal | 202 × 301 | High-resolution - explicitly resolves convection |
 
 ### Domain Selection
 
 Configure the number of domains in `config.env`:
 
 ```bash
-# Run all 3 domains (27km → 9km → 3km)
+# Run all 3 domains (25km → ~8.3km → ~2.8km)
 export MAX_DOM=3
 
-# Run 2 domains (27km → 9km) - Recommended for forecasts > 48h
+# Run 2 domains (25km → ~8.3km) - Recommended for forecasts > 48h
 export MAX_DOM=2
 
-# Run 1 domain (27km only) - Fastest, for testing
+# Run 1 domain (25km only) - Fastest, for testing
 export MAX_DOM=1
 ```
 
-> **⚠️ Note:** Domain d03 (3km) is computationally expensive. For forecasts longer than 48 hours, consider using `MAX_DOM=2`.
+> **⚠️ Note:** Domain d03 (~2.8km) is computationally expensive. For forecasts longer than 48 hours, consider using `MAX_DOM=2`.
 
 ### Map Projection
 
@@ -105,9 +105,9 @@ export MAX_DOM=1
 WRF produces NetCDF output files with the naming convention:
 
 ```
-wrfout_d01_YYYY-MM-DD_HH:00:00    # Domain 1 (27km)
-wrfout_d02_YYYY-MM-DD_HH:00:00    # Domain 2 (9km)  - if MAX_DOM ≥ 2
-wrfout_d03_YYYY-MM-DD_HH:00:00    # Domain 3 (3km)  - if MAX_DOM = 3
+wrfout_d01_YYYY-MM-DD_HH:00:00    # Domain 1 (25km)
+wrfout_d02_YYYY-MM-DD_HH:00:00    # Domain 2 (~8.3km)  - if MAX_DOM ≥ 2
+wrfout_d03_YYYY-MM-DD_HH:00:00    # Domain 3 (~2.8km)  - if MAX_DOM = 3
 ```
 
 ### Output Settings (configurable in `config.env`)
@@ -117,17 +117,6 @@ wrfout_d03_YYYY-MM-DD_HH:00:00    # Domain 3 (3km)  - if MAX_DOM = 3
 | `HISTORY_INTERVAL` | 60 min | Output frequency (hourly) |
 | `FRAMES_PER_OUTFILE` | 24 | Timesteps per file (1 day/file) |
 | `RESTART_INTERVAL` | 1440 min | Restart file frequency (daily) |
-
-### Key Variables for Fire Weather Index
-
-The WRF output contains all variables needed for FWI computation:
-
-- **T2** - 2-meter temperature (K)
-- **Q2** - 2-meter specific humidity (kg/kg)
-- **U10, V10** - 10-meter wind components (m/s)
-- **RAINNC, RAINC** - Accumulated precipitation (mm)
-- **PSFC** - Surface pressure (Pa)
-- **SWDOWN** - Downward shortwave radiation (W/m²)
 
 ---
 
@@ -161,22 +150,6 @@ Options:
   --help           Show help message
 ```
 
-### Examples
-
-```bash
-# Run with fresh workspace
-./run_forecast.sh --clean
-
-# Re-run WRF only (skip WPS preprocessing)
-./run_forecast.sh --skip-wps
-
-# Test configuration without executing
-./run_forecast.sh --dry-run
-
-# Use custom configuration
-./run_forecast.sh --config my_custom_config.env
-```
-
 ---
 
 ## ⚙️ Configuration Reference
@@ -192,17 +165,6 @@ export END_DATE="2025-12-04_00:00:00"
 export START_DATE="2025-12-02_00:00:00"
 export FORECAST_DURATION_HOURS=48
 ```
-
-### Physics Options (optimized for Fire Weather)
-
-| Parameter | Value | Scheme |
-|-----------|-------|--------|
-| `MP_PHYSICS` | 8 | Thompson microphysics |
-| `RA_LW_PHYSICS` | 4 | RRTMG longwave |
-| `RA_SW_PHYSICS` | 4 | RRTMG shortwave |
-| `SF_SURFACE_PHYSICS` | 4 | Noah-MP land surface |
-| `BL_PBL_PHYSICS` | 1 | YSU PBL scheme |
-| `CU_PHYSICS` | 1/1/0 | Kain-Fritsch (off for d03) |
 
 ### Parallel Execution
 

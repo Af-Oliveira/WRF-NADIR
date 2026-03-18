@@ -13,9 +13,9 @@
 !=========================================================================
 ! Domain Configuration (Dynamic based on MAX_DOM)
 !=========================================================================
-! Domain 01: Synoptic Scale (Europe/Atlantic) - Resolution: ~27km
-! Domain 02: Regional Scale (Iberian Peninsula) - Resolution: ~9km
-! Domain 03: Local Scale (Portugal High-Resolution) - Resolution: ~3km
+! Domain 01: Synoptic Scale (Europe/Atlantic) - Resolution: ~25km
+! Domain 02: Regional Scale (Iberian Peninsula) - Resolution: ~8.3km
+! Domain 03: Local Scale (Portugal High-Resolution) - Resolution: ~2.8km
 !=========================================================================
 
  parent_id         = {{PARENT_ID_ARRAY}},
