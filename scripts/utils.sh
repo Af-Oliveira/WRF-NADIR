@@ -16,27 +16,75 @@ NC='\033[0m' # No Color
 # -----------------------------------------------------------------------------
 # Logging functions
 # -----------------------------------------------------------------------------
+# Respects LOG_LEVEL (DEBUG=0, INFO=1, WARNING=2, ERROR=3) and
+# appends to LOG_FILE when set.
+# -----------------------------------------------------------------------------
+
+_log_level_num() {
+    case "${1^^}" in
+        DEBUG)   echo 0 ;;
+        INFO)    echo 1 ;;
+        SUCCESS) echo 1 ;;
+        WARNING) echo 2 ;;
+        ERROR)   echo 3 ;;
+        *)       echo 1 ;;
+    esac
+}
+
+_log() {
+    local level="$1"
+    local color="$2"
+    local message="$3"
+
+    local threshold
+    threshold=$(_log_level_num "${LOG_LEVEL:-INFO}")
+    local msg_level
+    msg_level=$(_log_level_num "$level")
+
+    # Write to LOG_FILE regardless of threshold (full audit trail)
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        mkdir -p "$(dirname "$LOG_FILE")"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [$level] $message" >> "$LOG_FILE"
+    fi
+
+    # Print to stdout only if level >= threshold
+    if [[ $msg_level -ge $threshold ]]; then
+        echo -e "${color}[$level]${NC} $message"
+    fi
+}
+
+log_debug() {
+    _log "DEBUG" "$CYAN" "$1"
+}
 
 log_info() {
-    echo -e "${BLUE}[INFO]${NC} $1"
+    _log "INFO" "$BLUE" "$1"
 }
 
 log_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
+    _log "SUCCESS" "$GREEN" "$1"
 }
 
 log_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
+    _log "WARNING" "$YELLOW" "$1"
 }
 
 log_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
+    _log "ERROR" "$RED" "$1"
 }
 
 log_step() {
-    echo -e "\n${CYAN}========================================${NC}"
-    echo -e "${CYAN}  $1${NC}"
-    echo -e "${CYAN}========================================${NC}\n"
+    local line msg
+    line="${CYAN}========================================${NC}"
+    msg="${CYAN}  $1${NC}"
+    echo -e "\n${line}"
+    echo -e "$msg"
+    echo -e "${line}\n"
+
+    if [[ -n "${LOG_FILE:-}" ]]; then
+        mkdir -p "$(dirname "$LOG_FILE")"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [STEP] $1" >> "$LOG_FILE"
+    fi
 }
 
 # -----------------------------------------------------------------------------
@@ -104,7 +152,6 @@ check_wps_installation() {
     check_executable "$wps_dir/geogrid.exe" "geogrid.exe" || return 1
     check_executable "$wps_dir/ungrib.exe" "ungrib.exe" || return 1
     check_executable "$wps_dir/metgrid.exe" "metgrid.exe" || return 1
-    check_file_exists "$wps_dir/link_grib.csh" "link_grib.csh" || return 1
     
     log_success "WPS installation verified"
     return 0
@@ -268,7 +315,6 @@ link_wps_files() {
     ln -sf "$wps_dir/geogrid.exe" .
     ln -sf "$wps_dir/ungrib.exe" .
     ln -sf "$wps_dir/metgrid.exe" .
-    ln -sf "$wps_dir/link_grib.csh" .
     
     # Link utility directories
     ln -sf "$wps_dir/geogrid" .

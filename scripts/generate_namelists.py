@@ -15,7 +15,6 @@ import re
 import argparse
 from datetime import datetime, timedelta
 from pathlib import Path
-import math
 
 
 class NamelistGenerator:
@@ -226,11 +225,6 @@ class NamelistGenerator:
         d03_dx = d02_dx // d03_ratio
         d03_dy = d02_dy // d03_ratio
         
-        self.config['D02_DX'] = str(d02_dx)
-        self.config['D02_DY'] = str(d02_dy)
-        self.config['D03_DX'] = str(d03_dx)
-        self.config['D03_DY'] = str(d03_dy)
-        
         # Workspace paths
         self.config['WORKSPACE_WPS'] = str(self.output_dir / 'wps')
         self.config['WORKSPACE_WRF'] = str(self.output_dir / 'wrf')
@@ -382,6 +376,13 @@ class NamelistGenerator:
         # GWD: typically only for outer domain
         gwd_values = [1, 0, 0]
         self.config['GWD_OPT_ARRAY'] = make_array(gwd_values, max_dom)
+        
+        # I/O quilting: when enabled (1), use configured tasks/groups;
+        # when disabled (0), force nio_tasks=0 and nio_groups=1.
+        io_quilting = int(self.config.get('IO_QUILTING', '0'))
+        if io_quilting == 0:
+            self.config['NUM_IO_TASKS'] = '0'
+            self.config['NUM_IO_GROUPS'] = '1'
     
     def validate_nesting(self):
         """Validate that nesting configuration is mathematically correct."""

@@ -85,7 +85,6 @@ export MAX_DOM=1
 | **Dynamic Namelists** | Generates WPS/WRF namelists from configuration |
 | **MPI Parallelization** | Supports parallel execution with MPICH |
 | **Flexible Periods** | Define by explicit dates or forecast duration |
-| **Clean Workspaces** | Options to clean/purge working directories |
 
 ### Workflow Steps
 
@@ -175,6 +174,36 @@ export NUM_TILES_X=4        # Domain decomposition X
 export NUM_TILES_Y=2        # Domain decomposition Y
 ```
 
+### I/O Quilting
+
+I/O quilting dedicates a subset of MPI processors exclusively to writing output files, so compute processors don't stall during output. This is configured in `config.env`:
+
+```bash
+export IO_QUILTING=1        # 0 = disabled, 1 = enabled
+export NUM_IO_GROUPS=1      # Number of I/O groups
+export NUM_IO_TASKS=2       # I/O processors per group
+```
+
+When `IO_QUILTING=0` (default), `NUM_IO_TASKS` and `NUM_IO_GROUPS` are forced to `0`/`1` regardless of what you set — all processors do both computation and I/O.
+
+When `IO_QUILTING=1`, the configured values pass through to `namelist.input`. The key constraint is:
+
+```
+Compute processors = NUM_PROCESSORS - (NUM_IO_TASKS × NUM_IO_GROUPS)
+NUM_TILES_X × NUM_TILES_Y = Compute processors
+```
+
+**Example with 8 processors:**
+
+| IO_QUILTING | NUM_IO_TASKS | Compute Procs | NUM_TILES_X × NUM_TILES_Y |
+|:-----------:|:------------:|:-------------:|:-------------------------:|
+| 0 (off)     | 0            | 8             | 4 × 2 = 8                |
+| 1 (on)      | 2            | 6             | 3 × 2 = 6                |
+
+> **⚠️ Warning:** If `NUM_TILES_X × NUM_TILES_Y` doesn't equal the compute processors, WRF will crash with a processor mismatch error. Always update the tile decomposition when changing quilting settings.
+
+I/O quilting works the same regardless of `MAX_DOM` (single or multiple domains). With a single domain there is less output to write, so the performance benefit is smaller — it becomes more useful with multiple domains or high-frequency output.
+
 ---
 
 ## 📋 Requirements
@@ -199,3 +228,4 @@ This project is provided as-is for research and operational use.
 - [WRF Users Guide](https://www2.mmm.ucar.edu/wrf/users/)
 - [GFS Data - UCAR GDEX](https://rda.ucar.edu/datasets/ds084.1/)
 - [WRF Instalation](https://github.com/HathewayWill/WRF-MOSIT)
+- [WRF Physics](https://www2.mmm.ucar.edu/wrf/users/wrf_users_guide/build/html/physics.html)

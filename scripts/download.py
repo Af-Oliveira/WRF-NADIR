@@ -548,17 +548,6 @@ Examples:
         for f in failed:
             print(f"   - {f}")
 
-    # WRF integration instructions
-    print("\n" + "=" * 60)
-    print("🔗 WRF Integration")
-    print("=" * 60)
-    print("To use with WPS, run these commands in your WPS directory:")
-    print(f"\n  cd ~/Models/WRF_TUTORIAL/WPS-4.5")
-    print(f"  ln -sf ungrib/Variable_Tables/Vtable.GFS Vtable")
-    print(f"  ./link_grib.csh {output_dir}/*/*.grib2")
-    print(f"  ./ungrib.exe")
-    print("=" * 60)
-
     sys.exit(0 if not failed else 1)
 
 
