@@ -85,15 +85,6 @@ export MAX_DOM=1
 | **MPI Parallelization** | Supports parallel execution with MPICH |
 | **Flexible Periods** | Define by explicit dates or forecast duration |
 
-### Workflow Steps
-
-```
-1. Generate Namelists  → Creates namelist.wps and namelist.input
-2. Run WPS             → geogrid.exe → ungrib.exe → metgrid.exe
-3. Run WRF             → real.exe → wrf.exe
-4. Output              → wrfout_d0X_* files in workspace/output/
-```
-
 ---
 
 ## 📤 Output
@@ -172,25 +163,6 @@ export USE_MPI=true         # Enable MPI
 export NUM_TILES_X=4        # Domain decomposition X
 export NUM_TILES_Y=2        # Domain decomposition Y
 ```
-
-### I/O Quilting
-
-I/O quilting is removed from this project to avoid MPI communicator failures on the current build.
-
-Namelists are generated with fixed values:
-
-```bash
-nio_tasks_per_group = 0
-nio_groups = 1
-```
-
-All MPI ranks perform computation and output. Keep tile decomposition matched to total processors:
-
-```
-NUM_TILES_X × NUM_TILES_Y = NUM_PROCESSORS
-```
-
----
 
 ## 📋 Requirements
 
