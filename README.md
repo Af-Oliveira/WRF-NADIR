@@ -12,7 +12,6 @@ A streamlined workflow for running WRF (Weather Research and Forecasting) simula
 WRF-NADIR/
 ├── config.env                    # Main configuration file (user-editable)
 ├── run_forecast.sh               # Main entry point - orchestrates the full workflow
-├── WRF_INSTALL_2025_MANUAL.sh    # WRF installation guide/script
 │
 ├── scripts/
 │   ├── download_gfs.py           # GFS data downloader (NCEP 0.25° from UCAR GDEX)
