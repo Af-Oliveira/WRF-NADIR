@@ -251,7 +251,7 @@ if [[ "$orig_hour" -ge 24 ]]; then
         offset_minutes=$(( (offset_seconds % 3600) / 60 ))
         offset_secs=$((offset_seconds % 60))
 
-        new_name="wrfout_${domain}_${orig_date_part}_$(printf '%03d' $offset_hours):$(printf '%02d' $offset_minutes):$(printf '%02d' $offset_secs)"
+        new_name="wrfout_${domain}_${orig_date_part}_$(printf '%03d' $offset_hours)-$(printf '%02d' $offset_minutes)-$(printf '%02d' $offset_secs)"
 
         if [[ "$fname" != "$new_name" ]]; then
             mv "$OUTPUT_DIR/$fname" "$OUTPUT_DIR/$new_name"
