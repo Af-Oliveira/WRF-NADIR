@@ -176,33 +176,20 @@ export NUM_TILES_Y=2        # Domain decomposition Y
 
 ### I/O Quilting
 
-I/O quilting dedicates a subset of MPI processors exclusively to writing output files, so compute processors don't stall during output. This is configured in `config.env`:
+I/O quilting is removed from this project to avoid MPI communicator failures on the current build.
+
+Namelists are generated with fixed values:
 
 ```bash
-export IO_QUILTING=1        # 0 = disabled, 1 = enabled
-export NUM_IO_GROUPS=1      # Number of I/O groups
-export NUM_IO_TASKS=2       # I/O processors per group
+nio_tasks_per_group = 0
+nio_groups = 1
 ```
 
-When `IO_QUILTING=0` (default), `NUM_IO_TASKS` and `NUM_IO_GROUPS` are forced to `0`/`1` regardless of what you set — all processors do both computation and I/O.
-
-When `IO_QUILTING=1`, the configured values pass through to `namelist.input`. The key constraint is:
+All MPI ranks perform computation and output. Keep tile decomposition matched to total processors:
 
 ```
-Compute processors = NUM_PROCESSORS - (NUM_IO_TASKS × NUM_IO_GROUPS)
-NUM_TILES_X × NUM_TILES_Y = Compute processors
+NUM_TILES_X × NUM_TILES_Y = NUM_PROCESSORS
 ```
-
-**Example with 8 processors:**
-
-| IO_QUILTING | NUM_IO_TASKS | Compute Procs | NUM_TILES_X × NUM_TILES_Y |
-|:-----------:|:------------:|:-------------:|:-------------------------:|
-| 0 (off)     | 0            | 8             | 4 × 2 = 8                |
-| 1 (on)      | 2            | 6             | 3 × 2 = 6                |
-
-> **⚠️ Warning:** If `NUM_TILES_X × NUM_TILES_Y` doesn't equal the compute processors, WRF will crash with a processor mismatch error. Always update the tile decomposition when changing quilting settings.
-
-I/O quilting works the same regardless of `MAX_DOM` (single or multiple domains). With a single domain there is less output to write, so the performance benefit is smaller — it becomes more useful with multiple domains or high-frequency output.
 
 ---
 

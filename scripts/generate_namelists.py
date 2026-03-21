@@ -377,13 +377,6 @@ class NamelistGenerator:
         gwd_values = [1, 0, 0]
         self.config['GWD_OPT_ARRAY'] = make_array(gwd_values, max_dom)
         
-        # I/O quilting: when enabled (1), use configured tasks/groups;
-        # when disabled (0), force nio_tasks=0 and nio_groups=1.
-        io_quilting = int(self.config.get('IO_QUILTING', '0'))
-        if io_quilting == 0:
-            self.config['NUM_IO_TASKS'] = '0'
-            self.config['NUM_IO_GROUPS'] = '1'
-    
     def validate_nesting(self):
         """Validate that nesting configuration is mathematically correct."""
         errors = []
